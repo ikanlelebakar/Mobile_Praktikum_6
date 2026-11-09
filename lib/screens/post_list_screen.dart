@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../config/dependency_injector.dart';
 import '../models/post.dart';
 import '../repositories/post_repository.dart';
-import '../repositories/post_repository_impl.dart';
 
 /// Halaman untuk menampilkan daftar post.
 ///
-/// Halaman ini menggunakan [PostRepository] untuk mengambil data,
-/// sehingga UI tidak bergantung langsung pada [ApiService].
+/// Halaman ini menggunakan [PostRepository] dari [DependencyInjector]
+/// untuk mengambil data, sehingga UI tidak bergantung langsung pada [ApiService].
 class PostListScreen extends StatefulWidget {
   final PostRepository? repository;
   const PostListScreen({super.key, this.repository});
@@ -20,10 +20,14 @@ class _PostListScreenState extends State<PostListScreen> {
   List<Post> _posts = [];
   bool _isLoading = true;
   String? _errorMessage;
+  bool _initialized = false;
+
   @override
-  void initState() {
-    super.initState();
-    _repository = widget.repository ?? PostRepositoryImpl();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return; // didChangeDependencies bisa dipanggil lebih dari sekali
+    _initialized = true;
+    _repository = widget.repository ?? DependencyInjector.of(context).postRepository;
     _loadPosts();
   }
 
