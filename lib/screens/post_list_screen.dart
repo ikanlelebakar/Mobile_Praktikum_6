@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../config/dependency_injector.dart';
 import '../models/post.dart';
 import '../repositories/post_repository.dart';
+import '../utils/logger.dart';
 
 /// Halaman untuk menampilkan daftar post.
 ///
@@ -32,17 +33,20 @@ class _PostListScreenState extends State<PostListScreen> {
   }
 
   Future<void> _loadPosts() async {
+    Logger.debug('Memuat daftar post...');
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
       final posts = await _repository.getPosts();
+      Logger.info('Berhasil memuat ${posts.length} post');
       setState(() {
         _posts = posts;
         _isLoading = false;
       });
     } catch (e) {
+      Logger.error('Gagal memuat daftar post: $e');
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;

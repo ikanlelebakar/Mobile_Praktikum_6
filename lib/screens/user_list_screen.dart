@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../config/dependency_injector.dart';
 import '../models/user.dart';
 import '../repositories/user_repository.dart';
+import '../utils/logger.dart';
+import '../utils/validators.dart';
 import '../widgets/user_card.dart';
 
 /// Halaman untuk menampilkan daftar pengguna.
@@ -33,17 +35,20 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 
   Future<void> _loadUsers() async {
+    Logger.debug('Memuat daftar pengguna...');
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
     try {
       final users = await _repository.getUsers();
+      Logger.info('Berhasil memuat ${users.length} pengguna');
       setState(() {
         _users = users;
         _isLoading = false;
       });
     } catch (e) {
+      Logger.error('Gagal memuat daftar pengguna: $e');
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -129,35 +134,62 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 
   void _showUserDetail(User user) {
+    // Data dari API diperiksa ulang sebelum ditampilkan.
+    final emailError = Validators.validateEmail(user.email);
+    final phoneError = Validators.validatePhone(user.phone);
+    final websiteError = Validators.validateUrl(user.website);
+    if (emailError != null || phoneError != null || websiteError != null) {
+      Logger.warning('Data pengguna ${user.username} tidak lolos validasi format');
+    }
     showModalBottomSheet(
       context: context,
       builder: (context) => Padding(
         padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              user.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text('Username: ${user.username}'),
-            Text('Email: ${user.email}'),
-            Text('Telepon: ${user.phone}'),
-            Text('Website: ${user.website}'),
-            Text('Perusahaan: ${user.companyName}'),
-
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Tutup'),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                user.name,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text('Username: ${user.username}'),
+              _detailField('Email', user.email, emailError),
+              _detailField('Telepon', user.phone, phoneError),
+              _detailField('Website', user.website, websiteError),
+              Text('Perusahaan: ${user.companyName}'),
+
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tutup'),
+                ),
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Satu baris detail; [error] ditampilkan merah jika data tidak valid.
+  Widget _detailField(String label, String value, String? error) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label: $value'),
+          if (error != null)
+            Text(
+              error,
+              style: const TextStyle(fontSize: 12, color: Colors.red),
+            ),
+        ],
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
+import '../utils/logger.dart';
+import '../utils/validators.dart';
 import 'post_list_screen.dart';
 import 'user_list_screen.dart';
 
@@ -13,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final SecureStorageService _storageService = SecureStorageService();
   final TextEditingController _tokenController = TextEditingController();
+  final GlobalKey<FormState> _tokenFormKey = GlobalKey<FormState>();
   String? _savedToken;
   bool _hasToken = false;
   @override
@@ -34,21 +37,19 @@ class _HomeScreenState extends State<HomeScreen> {
       _hasToken = hasToken;
       _savedToken = token;
     });
+    // Status saja, tanpa nilai token (lihat aturan logging repo).
+    Logger.info(hasToken ? 'Token ditemukan' : 'Token tidak ditemukan');
   }
 
   Future<void> _saveToken() async {
-    if (_tokenController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token tidak boleh kosong'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!(_tokenFormKey.currentState?.validate() ?? false)) {
+      Logger.warning('Penyimpanan token dibatalkan: input tidak valid');
       return;
     }
     await _storageService.saveToken(_tokenController.text.trim());
     _tokenController.clear();
     await _checkToken();
+    Logger.info('Token berhasil disimpan');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,6 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _deleteToken() async {
     await _storageService.deleteToken();
     await _checkToken();
+    Logger.info('Token berhasil dihapus');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -125,14 +127,23 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 16),
 
-                      TextField(
-                        controller: _tokenController,
-                        maxLength: 10,
-                        decoration: const InputDecoration(
-                          labelText: 'Token',
-                          hintText: 'Masukkan token dummy (maks. 10 karakter)',
-                          prefixIcon: Icon(Icons.vpn_key),
-                          border: OutlineInputBorder(),
+                      Form(
+                        key: _tokenFormKey,
+                        child: TextFormField(
+                          controller: _tokenController,
+                          maxLength: 10,
+                          validator: (value) => Validators.validateText(
+                            value,
+                            fieldName: 'Token',
+                            minLength: 1,
+                            maxLength: 10,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Token',
+                            hintText: 'Masukkan token dummy (maks. 10 karakter)',
+                            prefixIcon: Icon(Icons.vpn_key),
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ),
 
