@@ -28,10 +28,10 @@ class Validators {
   /// untuk mencegah XSS.
   static String sanitize(String input) {
     return input
-        .replaceAll('<', '<')
-        .replaceAll('>', '>')
-        .replaceAll('"', '"')
-        .replaceAll("'", "'")
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
         .trim();
   }
 
