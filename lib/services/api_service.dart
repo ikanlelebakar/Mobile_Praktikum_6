@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../models/post.dart';
 import '../models/user.dart';
 
 /// Service untuk komunikasi HTTP dengan REST API.
@@ -64,6 +65,34 @@ class ApiService {
       throw Exception('Request timeout. Periksa koneksi internet Anda.');
     } on SocketException {
       throw Exception('Tidak ada koneksi internet. Periksa jaringan Anda.');
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: $e');
+    }
+  }
+
+  /// Mengambil daftar post dari API.
+  ///
+  /// Mengembalikan [List<Post>] jika berhasil.
+  /// Melempar [Exception] dengan pesan yang ramah pengguna jika gagal.
+  Future<List<Post>> getPosts() async {
+    try {
+      _logRequest('GET', '/posts');
+      final response = await _client
+          .get(Uri.parse('$_baseUrl/posts'), headers: _buildHeaders())
+          .timeout(Duration(seconds: AppConfig.timeoutSeconds));
+      _logResponse(response.statusCode);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Post.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat data. Status: ${response.statusCode}');
+      }
+    } on TimeoutException {
+      throw Exception('Request timeout. Periksa koneksi internet Anda.');
+    } on SocketException {
+      throw Exception('Tidak ada koneksi internet. Periksa jaringan Anda.');
+    } on FormatException {
+      throw Exception('Format data tidak valid.');
     } catch (e) {
       throw Exception('Terjadi kesalahan: $e');
     }

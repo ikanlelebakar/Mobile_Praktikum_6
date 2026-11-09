@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/secure_storage_service.dart';
+import 'post_list_screen.dart';
 import 'user_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -71,6 +72,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  /// Pratinjau token untuk ditampilkan.
+  ///
+  /// Aman untuk token dengan panjang kurang dari 10 karakter.
+  String get _tokenPreview {
+    final token = _savedToken ?? '';
+    return token.length > 10 ? '${token.substring(0, 10)}...' : token;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,9 +127,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       TextField(
                         controller: _tokenController,
+                        maxLength: 10,
                         decoration: const InputDecoration(
                           labelText: 'Token',
-                          hintText: 'Masukkan token dummy',
+                          hintText: 'Masukkan token dummy (maks. 10 karakter)',
                           prefixIcon: Icon(Icons.vpn_key),
                           border: OutlineInputBorder(),
                         ),
@@ -178,7 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Expanded(
                               child: Text(
                                 _hasToken
-                                    ? 'Token tersimpan: ${_savedToken!}...' // .substring(0, 10)
+                                    ? 'Token tersimpan: $_tokenPreview'
                                     : 'Belum ada token tersimpan',
 
                                 style: TextStyle(
@@ -245,6 +255,31 @@ class _HomeScreenState extends State<HomeScreen> {
                           label: const Text('Lihat Daftar Pengguna'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PostListScreen(),
+                              ),
+                            );
+                          },
+
+                          icon: const Icon(Icons.article),
+
+                          label: const Text('Lihat Daftar Post'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.teal,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
